@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Локальный бэк по http. Для продакшена только https + домен. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <!-- Свой LAN-IP для физического телефона допиши сюда, напр.:
+        <domain includeSubdomains="false">192.168.1.50</domain> -->
+    </domain-config>
+</network-security-config>
