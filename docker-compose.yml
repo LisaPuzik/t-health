@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: wellness-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wellness
+      POSTGRES_USER: wellness
+      POSTGRES_PASSWORD: wellness_password
+    ports:
+      - '5432:5432'
+    volumes:
+      - wellness_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  wellness_postgres_data:
