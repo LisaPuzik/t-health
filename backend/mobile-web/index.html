@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>T-Health — онбординг (рабочий клиент)</title>
+<style>
+  :root{
+    --yellow:#FFDD2D;
+    --yellow-press:#E8C700;
+    --ink:#333333;
+    --white:#FFFFFF;
+    --gray-bg:#F5F5F5;
+    --gray-text:#9299A2;
+    --danger:#E5484D;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;
+    padding:0;
+    background:#EDEDED;
+    font-family:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+    color:var(--ink);
+    min-height:100%;
+  }
+  .stage{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:24px;
+    padding:32px 16px;
+  }
+  .phone{
+    width:375px;
+    max-width:100vw;
+    height:812px;
+    max-height:94vh;
+    background:var(--white);
+    border-radius:44px;
+    box-shadow:0 24px 60px rgba(0,0,0,0.28), 0 2px 8px rgba(0,0,0,0.12);
+    position:relative;
+    overflow:hidden;
+    border:8px solid #111;
+  }
+  .notch{
+    position:absolute;
+    top:8px;
+    left:50%;
+    transform:translateX(-50%);
+    width:120px;
+    height:22px;
+    background:#111;
+    border-radius:0 0 16px 16px;
+    z-index:50;
+  }
+  .screen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .screen.active{
+    opacity:1;
+    pointer-events:auto;
+  }
+  .api-error{
+    display:none;
+    margin-top:12px;
+    font-size:13px;
+    color:var(--danger);
+    text-align:center;
+    line-height:1.4;
+  }
+  .api-error.show{ display:block; }
+  .api-bar{
+    margin-top:10px;
+    font-size:11px;
+    color:var(--gray-text);
+    text-align:center;
+    word-break:break-all;
+  }
+  .api-bar button{
+    background:none;border:none;color:var(--ink);
+    font-size:11px;text-decoration:underline;cursor:pointer;padding:0;
+  }
+
+  /* ---------- SPLASH ---------- */
+  #screen-splash{
+    background:var(--ink);
+    align-items:center;
+    justify-content:center;
+  }
+  .splash-logo{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    animation:logoIn .35s ease-out both;
+  }
+  @keyframes logoIn{
+    from{ opacity:0; transform:scale(.92); }
+    to{ opacity:1; transform:scale(1); }
+  }
+  .splash-mark{
+    width:72px; height:72px;
+    border-radius:20px;
+    background:var(--yellow);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:14px;
+  }
+  .splash-mark svg{ width:38px; height:38px; }
+  .splash-word{
+    font-size:22px; font-weight:800; letter-spacing:-.02em; color:var(--yellow);
+  }
+  .splash-word span{ font-weight:400; opacity:.75; }
+  .splash-slogan{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--yellow);
+    opacity:.7;
+  }
+  .dots{
+    position:absolute;
+    bottom:56px; left:0; right:0;
+    display:flex; justify-content:center; gap:8px;
+  }
+  .dots span{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--yellow);
+    opacity:.25;
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  .dots span:nth-child(2){ animation-delay:.15s; }
+  .dots span:nth-child(3){ animation-delay:.3s; }
+  @keyframes pulse{
+    0%,100%{ opacity:.25; }
+    50%{ opacity:1; }
+  }
+
+  /* ---------- LOGIN ---------- */
+  #screen-login{
+    background:var(--white);
+    padding:0 20px;
+  }
+  .login-top{
+    display:flex; justify-content:center;
+    padding-top:50px;
+  }
+  .mini-logo{
+    display:flex; align-items:center; gap:6px;
+    font-weight:800; font-size:15px;
+  }
+  .mini-logo .dot{
+    width:20px; height:20px; border-radius:6px; background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .mini-logo .dot svg{ width:12px; height:12px; }
+  .login-title{
+    margin-top:120px;
+    font-size:26px; font-weight:800; text-align:center;
+    line-height:1.25;
+  }
+  .login-sub{
+    margin-top:8px;
+    font-size:14px; color:var(--gray-text);
+    text-align:center; line-height:1.4;
+    padding:0 12px;
+  }
+  .btn-primary{
+    margin-top:32px;
+    width:100%; height:56px;
+    background:var(--yellow);
+    border:none; border-radius:16px;
+    font-family:inherit; font-size:16px; font-weight:700; color:var(--ink);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    cursor:pointer;
+    transition:background .1s, transform .1s;
+  }
+  .btn-primary:hover{ background:var(--yellow-press); }
+  .btn-primary:active{ background:var(--yellow-press); transform:scale(.98); }
+  .btn-primary:disabled{ opacity:.4; }
+  .btn-primary.is-loading{ pointer-events:none; }
+  .spinner{
+    width:18px; height:18px;
+    border-radius:50%;
+    border:2.5px solid rgba(51,51,51,.3);
+    border-top-color:var(--ink);
+    animation:spin .7s linear infinite;
+    display:none;
+  }
+  .btn-primary.is-loading .spinner{ display:inline-block; }
+  .btn-primary.is-loading .btn-label{ display:none; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .legal{
+    margin-top:14px;
+    font-size:12px; color:var(--gray-text);
+    text-align:center; line-height:1.5;
+  }
+  .no-tid{
+    margin-top:20px;
+    margin-bottom:auto;
+    text-align:center;
+    font-size:13px; color:var(--ink);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+
+  /* ---------- SHEET (modal) ---------- */
+  .sheet-backdrop{
+    position:absolute; inset:0;
+    background:rgba(0,0,0,.35);
+    opacity:0; pointer-events:none;
+    transition:opacity .2s;
+    z-index:80;
+  }
+  .sheet-backdrop.open{ opacity:1; pointer-events:auto; }
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0;
+    background:var(--white);
+    border-radius:24px 24px 0 0;
+    padding:22px 20px 28px;
+    transform:translateY(100%);
+    transition:transform .25s ease;
+    max-height:80%;
+    overflow-y:auto;
+  }
+  .sheet-backdrop.open .sheet{ transform:translateY(0); }
+  .sheet h3{ margin:0 0 8px; font-size:18px; }
+  .sheet p{ margin:0 0 20px; font-size:14px; color:var(--gray-text); line-height:1.5; }
+  .sheet .btn-primary{ margin-top:12px; }
+  .sheet .btn-primary:first-of-type{ margin-top:0; }
+  .sheet .btn-text{
+    margin-top:10px; width:100%; text-align:center;
+    background:none; border:none; font-family:inherit;
+    font-size:14px; color:var(--gray-text); padding:10px; cursor:pointer;
+  }
+  .done-line{ font-size:14px; margin:4px 0; }
+  .done-line b{ font-weight:700; }
+
+  /* ---------- ONBOARDING SHARED ---------- */
+  .ob-header{ padding:16px 20px 0; }
+  .progress{ display:flex; gap:4px; }
+  .progress i{
+    flex:1; height:4px; border-radius:2px; background:var(--gray-bg);
+  }
+  .progress i.done{ background:var(--yellow); }
+  .ob-title{ margin-top:20px; font-size:24px; font-weight:800; }
+  .ob-sub{ margin-top:6px; font-size:14px; color:var(--gray-text); line-height:1.4; }
+  .ob-body{ flex:1; overflow-y:auto; padding:0 20px; }
+  .ob-footer{ padding:14px 20px 22px; }
+
+  /* ---------- INTERESTS ---------- */
+  .chip-grid{
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .chip{
+    position:relative;
+    background:var(--gray-bg);
+    border-radius:16px;
+    padding:14px 10px;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    transition:background .15s ease, transform .08s ease;
+  }
+  .chip:active{ transform:scale(.96); }
+  .chip.selected{ background:var(--yellow); }
+  .chip .emoji{ font-size:24px; }
+  .chip .label{ margin-top:8px; font-size:13px; font-weight:600; }
+  .chip .check{
+    position:absolute; top:8px; right:8px;
+    width:18px; height:18px; border-radius:50%;
+    background:var(--ink);
+    display:none; align-items:center; justify-content:center;
+  }
+  .chip.selected .check{ display:flex; }
+  .chip .check svg{ width:10px; height:10px; }
+  .skip-link{
+    display:block; text-align:center; margin-top:10px;
+    font-size:13px; color:var(--gray-text); cursor:pointer;
+  }
+
+  /* ---------- PRIVACY ---------- */
+  .pcard{
+    background:var(--gray-bg);
+    border-radius:16px;
+    padding:14px 16px;
+    margin-top:12px;
+  }
+  .pcard:first-child{ margin-top:20px; }
+  .pcard-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .pcard-title{ display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; }
+  .pcard-title .ic{ font-size:18px; }
+  .pcard-desc{ margin-top:6px; font-size:12.5px; color:var(--gray-text); line-height:1.45; }
+
+  .toggle{
+    width:46px; height:28px; border-radius:14px;
+    background:#E5E5E5; position:relative; flex:none;
+    cursor:pointer; transition:background .15s;
+  }
+  .toggle .knob{
+    position:absolute; top:2px; left:2px;
+    width:24px; height:24px; border-radius:50%;
+    background:var(--white);
+    box-shadow:0 1px 3px rgba(0,0,0,.25);
+    transition:transform .15s;
+  }
+  .toggle.on{ background:var(--yellow); }
+  .toggle.on .knob{ transform:translateX(18px); }
+
+  .trust-box{
+    margin-top:18px;
+    background:var(--yellow);
+    border-radius:16px;
+    padding:14px 16px;
+    display:flex; gap:10px;
+    font-size:12.5px; line-height:1.5;
+  }
+  .trust-box .ic{ font-size:18px; }
+  .btn-ghost{
+    width:100%; text-align:center; background:none; border:none;
+    font-family:inherit; font-size:14px; color:var(--gray-text);
+    padding:12px; cursor:pointer;
+  }
+
+  /* ---------- NAV (outside phone, test control) ---------- */
+  .navbar{
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    background:var(--white);
+    padding:10px;
+    border-radius:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,.12);
+  }
+  .navbar button{
+    font-family:inherit;
+    border:none;
+    background:var(--gray-bg);
+    color:var(--ink);
+    font-size:13px; font-weight:600;
+    padding:10px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .navbar button:hover{ background:#ECECEC; }
+  .navbar button.active{ background:var(--yellow); }
+  .hint{
+    font-size:12px; color:#8a8a8a; text-align:center; max-width:375px;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="phone">
+    <div class="notch"></div>
+
+    <!-- SCREEN 1: SPLASH -->
+    <div class="screen active" id="screen-splash">
+      <div class="splash-logo">
+        <div class="splash-mark">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M2 12h4l2-7 4 14 3-9 2 4h5" stroke=#333333 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="splash-word">T<span>Health</span></div>
+      </div>
+      <div class="splash-slogan">Твоё здоровье. Твои правила.</div>
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- SCREEN 2: LOGIN -->
+    <div class="screen" id="screen-login">
+      <div class="login-top">
+        <div class="mini-logo">
+          <div class="dot"><svg viewBox="0 0 24 24" fill="none"><path d="M2 12h4l2-7 4 14 3-9 2 4h5" stroke="#FFDD2D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          T-Health
+        </div>
+      </div>
+
+      <div class="login-title">Добро пожаловать<br>в T-Health</div>
+      <div class="login-sub">Тестовый вход через API (T-ID подключим позже).</div>
+      <button class="btn-primary" id="loginBtn" onclick="handleLogin()">
+        <span class="spinner"></span>
+        <span class="btn-label">Войти через T-ID</span>
+      </button>
+      <div class="api-error" id="loginError"></div>
+      <div class="legal">Продолжая, ты соглашаешься с политикой обработки данных.</div>
+      <div class="no-tid" onclick="openSheet()">У меня нет T-ID</div>
+      <div class="api-bar">API: <span id="apiBaseLabel"></span> <button onclick="changeApi()">сменить</button></div>
+    </div>
+
+    <!-- SCREEN 3: INTERESTS -->
+    <div class="screen" id="screen-interests">
+      <div class="ob-header">
+        <div class="progress"><i class="done"></i><i></i><i></i></div>
+        <div class="ob-title">Что тебе интересно?</div>
+        <div class="ob-sub">Выбери минимум 3 направления — будем рекомендовать челленджи и сообщества.</div>
+      </div>
+      <div class="ob-body">
+        <div class="chip-grid" id="chipGrid">
+          <div class="chip" data-chip data-interest="Running"><span class="emoji">🏃</span><div class="label">Бег</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="Bicycling"><span class="emoji">🚴</span><div class="label">Велоспорт</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="Volleyball"><span class="emoji">🏐</span><div class="label">Волейбол</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="Yoga"><span class="emoji">🧘</span><div class="label">Йога и медитация</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="WeightTraining"><span class="emoji">🏋️</span><div class="label">Силовые тренировки</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="Nutrition"><span class="emoji">🥗</span><div class="label">Питание</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="Walking"><span class="emoji">🚶</span><div class="label">Ходьба</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+          <div class="chip" data-chip data-interest="MentalHealth"><span class="emoji">🧠</span><div class="label">Ментальное здоровье</div><div class="check"><svg viewBox="0 0 24 24"><path d="M4 12l6 6L20 6" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+        </div>
+        <div class="api-error" id="interestsError"></div>
+        <div class="skip-link" onclick="showScreen('privacy')">Пропустить</div>
+      </div>
+      <div class="ob-footer">
+        <button class="btn-primary" id="interestsNext" disabled onclick="saveInterests()">
+          <span class="spinner"></span>
+          <span class="btn-label">Далее</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: PRIVACY -->
+    <div class="screen" id="screen-privacy">
+      <div class="ob-header">
+        <div class="progress"><i class="done"></i><i class="done"></i><i></i></div>
+        <div class="ob-title">Ты решаешь,<br>что видят другие.</div>
+        <div class="ob-sub">T-Health создан для твоей пользы, а не для слежки.</div>
+      </div>
+      <div class="ob-body">
+        <div class="pcard">
+          <div class="pcard-row">
+            <div class="pcard-title"><span class="ic">🏃</span>Моя активность для коллег</div>
+            <div class="toggle on" data-toggle="activity" onclick="toggle(this)"><div class="knob"></div></div>
+          </div>
+          <div class="pcard-desc">Коллеги видят твои шаги и тренировки в ленте.</div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-row">
+            <div class="pcard-title"><span class="ic">🧠</span>Моё настроение для HR</div>
+            <div class="toggle" data-toggle="mood" onclick="toggle(this)"><div class="knob"></div></div>
+          </div>
+          <div class="pcard-desc">HR видит только агрегированные тренды по отделу (от 5 человек). Твои личные записи — нет.</div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-row">
+            <div class="pcard-title"><span class="ic">⌚</span>Синхронизация с Apple Health / Google Fit</div>
+            <div class="toggle on" data-toggle="sync" onclick="toggle(this)"><div class="knob"></div></div>
+          </div>
+          <div class="pcard-desc">Или добавляй активность вручную — это тоже работает.</div>
+        </div>
+        <div class="trust-box">
+          <span class="ic">🔒</span>
+          <span>Твои данные защищены. HR никогда не увидит, что ты ел, сколько шагов прошёл или как себя чувствуешь. Только общие тренды.</span>
+        </div>
+        <div class="api-error" id="privacyError"></div>
+      </div>
+      <div class="ob-footer">
+        <button class="btn-primary" id="finishBtn" onclick="finishOnboarding()">
+          <span class="spinner"></span>
+          <span class="btn-label">Далее</span>
+        </button>
+        <button class="btn-ghost" onclick="finishOnboarding()">Настрою позже</button>
+      </div>
+    </div>
+
+    <!-- SHEET -->
+    <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheetOutside(event)">
+      <div class="sheet" id="sheetBox">
+        <h3 id="sheetTitle">Нет доступа?</h3>
+        <p id="sheetText">Обратись в HR-отдел или IT-поддержку — тебе помогут получить T-ID. Для проверки также можно создать тестовый аккаунт.</p>
+        <div id="sheetDone" style="display:none"></div>
+        <button class="btn-primary" id="sheetMainBtn" onclick="registerDemo()"><span class="spinner"></span><span class="btn-label">Создать тестовый аккаунт</span></button>
+        <button class="btn-text" onclick="closeSheet()">Закрыть</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="navbar">
+    <button data-nav="splash" class="active" onclick="showScreen('splash')">Splash</button>
+    <button data-nav="login" onclick="showScreen('login')">Вход</button>
+    <button data-nav="interests" onclick="enterInterests()">Интересы</button>
+    <button data-nav="privacy" onclick="showScreen('privacy')">Приватность</button>
+    <button onclick="logout()">Выйти</button>
+  </div>
+  <div class="hint">Рабочий клиент: вход, интересы и финал ходят в настоящий API. Приватность пока хранится только на устройстве.</div>
+
+</div>
+
+<script>
+'use strict';
+/* API base: ?api=http://... > сохранённый > localhost (для телефона в той же Wi-Fi — IP компьютера) */
+var API_BASE = new URLSearchParams(location.search).get('api')
+  || localStorage.getItem('thealth_api')
+  || 'http://localhost:5059';
+var DEVICE_ID = localStorage.getItem('thealth_device');
+if (!DEVICE_ID) {
+  DEVICE_ID = 'mobileweb-' + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem('thealth_device', DEVICE_ID);
+}
+var DEMO_EMAIL = 'alice@company.com';
+var DEMO_PASSWORD = 'Password123!';
+
+function setApiLabel() {
+  document.getElementById('apiBaseLabel').textContent = API_BASE;
+}
+function changeApi() {
+  var v = prompt('Адрес API (например http://192.168.1.5:5059):', API_BASE);
+  if (v) {
+    API_BASE = v.replace(/\/$/, '');
+    localStorage.setItem('thealth_api', API_BASE);
+    setApiLabel();
+  }
+}
+function tokens() {
+  return {
+    access: localStorage.getItem('thealth_access'),
+    refresh: localStorage.getItem('thealth_refresh'),
+    userId: localStorage.getItem('thealth_userId'),
+    email: localStorage.getItem('thealth_email')
+  };
+}
+function saveTokens(d) {
+  localStorage.setItem('thealth_access', d.accessToken);
+  localStorage.setItem('thealth_refresh', d.refreshToken);
+  localStorage.setItem('thealth_userId', d.userId);
+  localStorage.setItem('thealth_email', d.email);
+}
+function logout() {
+  localStorage.removeItem('thealth_access');
+  localStorage.removeItem('thealth_refresh');
+  localStorage.removeItem('thealth_userId');
+  localStorage.removeItem('thealth_email');
+  showScreen('login');
+}
+async function api(path, method, body, retry) {
+  var t = tokens();
+  var headers = { 'Content-Type': 'application/json' };
+  if (t.access) headers['Authorization'] = 'Bearer ' + t.access;
+  var res = await fetch(API_BASE + path, {
+    method: method || 'GET',
+    headers: headers,
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (res.status === 401 && t.refresh && retry !== false) {
+    var rr = await fetch(API_BASE + '/api/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: t.refresh })
+    });
+    if (rr.ok) {
+      saveTokens(await rr.json());
+      return api(path, method, body, false);
+    }
+    logout();
+    throw new Error('Сессия истекла, войди снова.');
+  }
+  if (!res.ok) {
+    var msg = 'Ошибка ' + res.status;
+    try {
+      var j = await res.json();
+      if (j && j.message) msg = j.message;
+    } catch (e) { /* оставим код */ }
+    throw new Error(msg);
+  }
+  return res.json();
+}
+function showError(id, e) {
+  var el = document.getElementById(id);
+  el.textContent = 'Нет связи с API: ' + e.message + ' Проверь, что бэк запущен.';
+  el.classList.add('show');
+}
+function clearError(id) {
+  var el = document.getElementById(id);
+  el.classList.remove('show');
+}
+function setLoading(btnId, on) {
+  document.getElementById(btnId).classList.toggle('is-loading', !!on);
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); });
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.navbar button[data-nav]').forEach(function (b) { b.classList.remove('active'); });
+  var nav = document.querySelector('[data-nav="' + name + '"]');
+  if (nav) nav.classList.add('active');
+}
+function enterInterests() {
+  showScreen('interests');
+  loadInterests();
+}
+
+/* --- LOGIN (демо через T-ID кнопку) --- */
+async function handleLogin() {
+  clearError('loginError');
+  setLoading('loginBtn', true);
+  try {
+    var d = await api('/api/auth/login', 'POST', {
+      email: DEMO_EMAIL, password: DEMO_PASSWORD, deviceId: DEVICE_ID
+    }, false);
+    saveTokens(d);
+    enterInterests();
+  } catch (e) {
+    showError('loginError', e);
+  } finally {
+    setLoading('loginBtn', false);
+  }
+}
+async function registerDemo() {
+  setLoading('sheetMainBtn', true);
+  try {
+    var rnd = Math.random().toString(36).slice(2, 8);
+    var d = await api('/api/auth/register', 'POST', {
+      email: 'demo.' + rnd + '@t-health.local',
+      password: 'Demo123!',
+      firstName: 'Demo',
+      lastName: 'User',
+      deviceId: DEVICE_ID
+    }, false);
+    saveTokens(d);
+    closeSheet();
+    enterInterests();
+  } catch (e) {
+    alert('Не вышло: ' + e.message);
+  } finally {
+    setLoading('sheetMainBtn', false);
+  }
+}
+function openSheet() {
+  document.getElementById('sheetTitle').textContent = 'Нет доступа?';
+  document.getElementById('sheetText').style.display = '';
+  document.getElementById('sheetDone').style.display = 'none';
+  document.getElementById('sheetMainBtn').style.display = '';
+  document.getElementById('sheetBackdrop').classList.add('open');
+}
+function closeSheet() { document.getElementById('sheetBackdrop').classList.remove('open'); }
+function closeSheetOutside(e) { if (e.target.id === 'sheetBackdrop') closeSheet(); }
+
+/* --- INTERESTS --- */
+function refreshNextBtn() {
+  var count = document.querySelectorAll('.chip.selected').length;
+  document.getElementById('interestsNext').disabled = count < 3;
+}
+async function loadInterests() {
+  clearError('interestsError');
+  try {
+    var list = await api('/api/interests', 'GET');
+    var byName = {};
+    list.forEach(function (x) { byName[x.name] = x; });
+    document.querySelectorAll('[data-chip]').forEach(function (chip) {
+      var info = byName[chip.getAttribute('data-interest')];
+      chip.classList.toggle('selected', !!(info && info.selected));
+    });
+  } catch (e) {
+    showError('interestsError', e);
+  }
+  refreshNextBtn();
+}
+function selectedInterestIds() {
+  return ['Running','Bicycling','Volleyball','Yoga','WeightTraining','Nutrition','Walking','MentalHealth'];
+}
+async function saveInterests() {
+  clearError('interestsError');
+  var btn = document.getElementById('interestsNext');
+  btn.classList.add('is-loading');
+  try {
+    var list = await api('/api/interests', 'GET');
+    var idByName = {};
+    list.forEach(function (x) { idByName[x.name] = x.id; });
+    var ids = [];
+    document.querySelectorAll('.chip.selected').forEach(function (chip) {
+      var id = idByName[chip.getAttribute('data-interest')];
+      if (id) ids.push(id);
+    });
+    await api('/api/interests/me', 'PUT', { interestIds: ids });
+    showScreen('privacy');
+  } catch (e) {
+    showError('interestsError', e);
+  } finally {
+    btn.classList.remove('is-loading');
+  }
+}
+
+/* --- PRIVACY (пока только на устройстве; ручек в API ещё нет) --- */
+function toggle(el) {
+  el.classList.toggle('on');
+  var prefs = loadPrefs();
+  prefs[el.getAttribute('data-toggle')] = el.classList.contains('on');
+  localStorage.setItem('thealth_privacy', JSON.stringify(prefs));
+}
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem('thealth_privacy')) || {}; }
+  catch (e) { return {}; }
+}
+function applyPrefs() {
+  var prefs = loadPrefs();
+  document.querySelectorAll('[data-toggle]').forEach(function (el) {
+    var k = el.getAttribute('data-toggle');
+    if (k in prefs) el.classList.toggle('on', !!prefs[k]);
+  });
+}
+async function finishOnboarding() {
+  clearError('privacyError');
+  var btn = document.getElementById('finishBtn');
+  btn.classList.add('is-loading');
+  try {
+    var me = await api('/api/auth/me', 'GET');
+    var crystal = await api('/api/crystal/me', 'GET');
+    document.getElementById('sheetTitle').textContent = 'Готово!';
+    document.getElementById('sheetText').style.display = 'none';
+    var box = document.getElementById('sheetDone');
+    box.style.display = '';
+    box.innerHTML =
+      '<div class="done-line">Аккаунт: <b>' + me.email + '</b></div>' +
+      '<div class="done-line">Очки: <b>' + me.totalPoints + '</b></div>' +
+      '<div class="done-line">Кристалл: <b>ур.' + crystal.level + '</b>, XP ' + crystal.xp + ', энергия ' + crystal.energy + '</div>' +
+      '<div class="done-line">Дальше по ТЗ — главный экран.</div>';
+    document.getElementById('sheetMainBtn').style.display = 'none';
+    document.getElementById('sheetBackdrop').classList.add('open');
+  } catch (e) {
+    showError('privacyError', e);
+  } finally {
+    btn.classList.remove('is-loading');
+  }
+}
+
+/* --- INIT --- */
+document.querySelectorAll('[data-chip]').forEach(function (chip) {
+  chip.addEventListener('click', function () {
+    chip.classList.toggle('selected');
+    refreshNextBtn();
+  });
+});
+setApiLabel();
+applyPrefs();
+setTimeout(function () { showScreen('login'); }, 1100);
+</script>
+
+</body>
+</html>
+...[truncated 4474 chars]
