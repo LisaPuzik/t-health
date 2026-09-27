@@ -1,0 +1,26 @@
+# .NET
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.rsuser
+*.suo
+appsettings.*.json
+!appsettings.json
+secrets.json
+.env
+
+# Android / Gradle
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+.DS_Store
+
+# OS
+Thumbs.db
