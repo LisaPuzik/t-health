@@ -1,12 +1,12 @@
 # T-Health — Android (Kotlin + Jetpack Compose)
 
-Нативный клиент к [WellnessApp.Api](../WellnessApp.Api): онбординг (Splash → Вход → Интересы → Приватность),
+Нативный клиент к [бэкенду](../backend): онбординг (Splash → Вход → Интересы → Приватность),
 Главная с кольцом шагов, Челленджи, Сообщества, Лента, Профиль, тамагочи-кристалл, AI-подборка.
 
 ## Быстрый старт
 
 Требования: [Android Studio](https://developer.android.com/studio) (JDK 17+ встроен),
-запущенный [бэкенд](../WellnessApp.Api) (см. его README).
+запущенный [бэкенд](../backend) (см. его README).
 
 ```bash
 # 1. Бэк (в другом терминале):

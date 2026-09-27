@@ -4,7 +4,7 @@ ASP.NET Core 8 + EF Core + PostgreSQL. Аутентификация JWT (access 
 тренировки, метрики здоровья, челленджи (личные + шаги), сообщества, лента, достижения,
 кристалл-тамагочи, стрики, AI-рекомендации (Google Gemini с фолбэком на правила).
 
-Мобильный клиент: [THealth.Android](../THealth.Android) (Kotlin + Jetpack Compose).
+Мобильный клиент: [android](../android) (Kotlin + Jetpack Compose).
 
 ## Быстрый старт
 
