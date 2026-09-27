@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -18,10 +20,9 @@ android {
 
         // Адрес бэка — из local.properties (apiBaseUrl=...), чтобы не править
         // код под каждый Wi-Fi. Дефолт — эмулятор (10.0.2.2 = localhost хоста).
-        val localProps = java.util.Properties().apply {
-            rootProject.file("local.properties").takeIf { it.exists() }
-                ?.inputStream()?.use(::load)
-        }
+        val localProps = Properties()
+        rootProject.file("local.properties").takeIf { it.exists() }
+            ?.inputStream()?.use { stream -> localProps.load(stream) }
         val apiBaseUrl: String =
             localProps.getProperty("apiBaseUrl") ?: "http://10.0.2.2:5059/"
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
